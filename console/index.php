@@ -1,8 +1,5 @@
 <?php
 
-use App\Domain\ValueObjects\Cpf;
-use App\Domain\ValueObjects\Email;
-use App\Domain\Entities\Registration;
 use App\Infra\Adapters\Html2PdfAdapter;
 use App\Infra\Adapters\LocalStorageAdapter;
 use App\Infra\Cli\Commands\ExportRegistrationCommand;
@@ -13,14 +10,6 @@ use App\Application\UseCases\ExportRegistration\ExportRegistration;
 require_once __DIR__ . '/../vendor/autoload.php';
 
 $appConfig = require_once __DIR__ . '/../config/app.php';
-
-$registration = new Registration();
-$registration
-    ->setName('Giovane Santos Silva')
-    ->setBirthDate(new DateTimeImmutable('1999-07-02'))
-    ->setEmail(new Email('giovanesantos1999@gmail.com'))
-    ->setRegistrationAt(new DateTimeImmutable())
-    ->setNumber(new Cpf('01234567890'));
 
 $dsn = sprintf(
     'mysql:host=%s;port=%s;dbname=%s;charset=%s',

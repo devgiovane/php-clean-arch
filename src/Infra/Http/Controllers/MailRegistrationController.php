@@ -9,17 +9,17 @@ namespace App\Infra\Http\Controllers;
 
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use App\Application\UseCases\ExportRegistration\InputBoundary;
-use App\Application\UseCases\ExportRegistration\ExportRegistration;
+use App\Application\UseCases\MailRegistration\InputBoundary;
+use App\Application\UseCases\MailRegistration\MailRegistration;
 
 
-final class ExportRegistrationController
+final class MailRegistrationController
 {
     private RequestInterface $request;
     private ResponseInterface $response;
-    private ExportRegistration  $useCase;
+    private MailRegistration $useCase;
 
-    public function __construct(RequestInterface $request, ResponseInterface $response, ExportRegistration $useCase)
+    public function __construct(RequestInterface $request, ResponseInterface $response, MailRegistration $useCase)
     {
         $this->request = $request;
         $this->response = $response;
@@ -28,18 +28,17 @@ final class ExportRegistrationController
 
     public function handle(Presentation $presentation): ResponseInterface
     {
-        $inputBoundary = new inputBoundary(
+        $inputBoundary = new InputBoundary(
             '01234567890',
-            'student.pdf',
-            __DIR__ . '/../../../../storage/registrations'
+            __DIR__ . '/../../../../storage/registrations/student.pdf'
         );
 
         $output = $this->useCase->handle($inputBoundary);
 
         $this->response
             ->getBody()
-            ->write( $presentation->output(array(
-                'fullFileName' => $output->getFullFileName()
+            ->write($presentation->output(array(
+                'email' => $output->getEmail()
             )));
 
         return $this->response
