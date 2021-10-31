@@ -7,8 +7,10 @@ declare(strict_types=1);
 namespace App\Infra\Http\Controllers;
 
 
+use App\Infra\Presentation\Presentation;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use App\Infra\Http\Notification\NotificationError;
 use App\Application\UseCases\MailRegistration\InputBoundary;
 use App\Application\UseCases\MailRegistration\MailRegistration;
 
@@ -28,21 +30,39 @@ final class MailRegistrationController
 
     public function handle(Presentation $presentation): ResponseInterface
     {
-        $inputBoundary = new InputBoundary(
-            '01234567890',
-            __DIR__ . '/../../../../storage/registrations/student.pdf'
-        );
+        $notificationError = new NotificationError();
 
-        $output = $this->useCase->handle($inputBoundary);
+        $body = json_decode($this->request->getBody()->getContents(), true);
+
+        if(empty($body['cpf'])) {
+            $notificationError
+                ->setMessage(array('error' => 'CPF is not empty'))
+                ->setStatusCode(400);
+        } else {
+            try {
+                $inputBoundary = new InputBoundary(
+                    $body['cpf'],
+                    __DIR__ . '/../../../../storage/registrations/' . $body['cpf'] . '.pdf'
+                );
+
+                $output = $this->useCase->handle($inputBoundary);
+
+                $notificationError
+                    ->setMessage(array('emailSent' => $output->getEmail()))
+                    ->setStatusCode(200);
+            } catch (\Exception $exception) {
+                $notificationError
+                    ->setMessage(array('error' => $exception->getMessage()))
+                    ->setStatusCode(400);
+            }
+        }
 
         $this->response
             ->getBody()
-            ->write($presentation->output(array(
-                'email' => $output->getEmail()
-            )));
+            ->write($presentation->output($notificationError->getMessage()));
 
         return $this->response
             ->withHeader('Content-Type', 'application/json')
-            ->withStatus(200);
+            ->withStatus($notificationError->getStatusCode());
     }
 }

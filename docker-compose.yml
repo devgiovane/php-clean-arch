@@ -2,10 +2,10 @@ version: '3'
 services:
   aapplication:
     build: ./
-    image: giovane1999/php-nginx
+    image: giovane1999/php-server
     container_name: clean_application
     volumes:
-      - ./:/var/www/html
+      - ./:/usr/src/app
     ports:
       - "80:80"
     networks:

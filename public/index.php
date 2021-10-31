@@ -1,24 +1,31 @@
 <?php
 
 use Dotenv\Dotenv;
-use GuzzleHttp\Psr7\Request;
-use GuzzleHttp\Psr7\Response;
-use App\Infra\Adapters\Html2PdfAdapter;
+use PlugRoute\PlugRoute;
+use PlugRoute\RouteFactory;
+use PlugRoute\Http\Request;
+use PlugRoute\Http\Response;
 use App\Infra\Adapters\PhpMailerAdapter;
+use App\Infra\Adapters\Html2PdfAdapter;
+use App\Infra\Adapters\PlugRoutePsrAdapter;
 use App\Infra\Adapters\LocalStorageAdapter;
 use App\Infra\Presentation\ExportRegistrationPresenter;
-use App\Infra\Http\Controllers\MailRegistrationController;
 use App\Infra\Repositories\MySQL\PdoRegistrationRepository;
+use App\Infra\Http\Controllers\MailRegistrationController;
 use App\Infra\Http\Controllers\ExportRegistrationController;
 use App\Application\UseCases\MailRegistration\MailRegistration;
 use App\Application\UseCases\ExportRegistration\ExportRegistration;
 
+header('Access-Control-Allow-Origin: *');
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
+
 require_once __DIR__ . '/../vendor/autoload.php';
-$appConfig = require_once __DIR__ . '/../config/app.php';
 
 $dotEnv = Dotenv::createImmutable(__DIR__ . '/../');
 $dotEnv->safeLoad();
 
+$appConfig = require_once __DIR__ . '/../config/app.php';
 $dsn = sprintf(
     'mysql:host=%s;port=%s;dbname=%s;charset=%s',
     $appConfig['database']['host'],
@@ -33,30 +40,53 @@ $pdo = new \PDO($dsn, $appConfig['database']['username'], $appConfig['database']
     PDO::ATTR_PERSISTENT => TRUE
 ));
 
-// Use Case Export Registration
-$request = new Request('GET', 'http://localhost:8000');
-$response = new Response();
+$route = RouteFactory::create();
 
-$storage = new LocalStorageAdapter();
-$pdfExporter = new Html2PdfAdapter();
-$loadRegistrationRepository = new PdoRegistrationRepository($pdo);
+$route->group(array('prefix' => '/api'), function (PlugRoute $route) use ($pdo) {
 
-$exportRegistrationUseCase = new ExportRegistration($loadRegistrationRepository, $pdfExporter, $storage);
-$exportRegistrationController = new ExportRegistrationController($request, $response, $exportRegistrationUseCase);
+    $route->post('/registration/register', function (Request $request, Response $response) use ($pdo) {
+        $newRequest = PlugRoutePsrAdapter::adapterRequest($request);
+        $newResponse = PlugRoutePsrAdapter::adapterResponse($response);
 
-$exportRegistrationPresenter = new ExportRegistrationPresenter();
-echo $exportRegistrationController->handle($exportRegistrationPresenter)->getBody();
+        $storage = new LocalStorageAdapter();
+        $pdfExporter = new Html2PdfAdapter();
+        $exportRegistrationPresenter = new ExportRegistrationPresenter();
+        $loadRegistrationRepository = new PdoRegistrationRepository($pdo);
 
-echo '<br/>';
+        $exportRegistrationUseCase = new ExportRegistration($loadRegistrationRepository, $pdfExporter, $storage);
+        $exportRegistrationController = new ExportRegistrationController($newRequest, $newResponse, $exportRegistrationUseCase);
 
-// Use Case Mail Registration
-$request = new Request('GET', 'http://localhost:8000');
-$response = new Response();
+        $controllerResponse = $exportRegistrationController->handle($exportRegistrationPresenter);
+        $responseAsArray = json_decode($controllerResponse->getBody(), true);
 
-$mailerAdapter = new PhpMailerAdapter();
+        return $response
+            ->setStatusCode($controllerResponse->getStatusCode())
+            ->addHeaders($controllerResponse->getHeaders())
+            ->response()
+            ->json($responseAsArray);
+    });
 
-$mailRegistrationUseCase = new MailRegistration($loadRegistrationRepository, $mailerAdapter);
-$mailRegistrationController = new MailRegistrationController($request, $response, $mailRegistrationUseCase);
+    $route->post('/registration/email', function (Request $request, Response $response) use ($pdo) {
+        $newRequest = PlugRoutePsrAdapter::adapterRequest($request);
+        $newResponse = PlugRoutePsrAdapter::adapterResponse($response);
 
-$exportRegistrationPresenter = new ExportRegistrationPresenter();
-echo $mailRegistrationController->handle($exportRegistrationPresenter)->getBody();
+        $mailerAdapter = new PhpMailerAdapter();
+        $exportRegistrationPresenter = new ExportRegistrationPresenter();
+        $loadRegistrationRepository = new PdoRegistrationRepository($pdo);
+
+        $mailRegistrationUseCase = new MailRegistration($loadRegistrationRepository, $mailerAdapter);
+        $mailRegistrationController = new MailRegistrationController($newRequest, $newResponse, $mailRegistrationUseCase);
+
+        $controllerResponse = $mailRegistrationController->handle($exportRegistrationPresenter);
+        $responseAsArray = json_decode($controllerResponse->getBody(), true);
+
+        return $response
+            ->setStatusCode($controllerResponse->getStatusCode())
+            ->addHeaders($controllerResponse->getHeaders())
+            ->response()
+            ->json($responseAsArray);
+    });
+
+});
+
+$route->on();

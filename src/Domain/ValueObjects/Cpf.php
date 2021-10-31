@@ -6,6 +6,9 @@ declare(strict_types=1);
 namespace App\Domain\ValueObjects;
 
 
+use App\Domain\Exceptions\CpfInvalidException;
+
+
 final class Cpf
 {
     private string $cpf;
@@ -13,7 +16,7 @@ final class Cpf
     public function __construct(string $cpf)
     {
         if(!$this->validate($cpf)) {
-            throw new \DomainException('CPF is not valid');
+            throw new CpfInvalidException();
         }
         $this->cpf = $cpf;
     }

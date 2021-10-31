@@ -3,11 +3,6 @@
     "description": "Clean Architecture With PHP",
     "type": "project",
     "license": "MIT",
-    "autoload": {
-        "psr-4": {
-            "App\\": "src/"
-        }
-    },
     "authors": [
         {
             "name": "Giovane Santos Silva",
@@ -21,6 +16,12 @@
         "spipu/html2pdf": "^5.2",
         "guzzlehttp/psr7": "^2.1",
         "phpmailer/phpmailer": "^6.5",
-        "vlucas/phpdotenv": "^5.3"
+        "vlucas/phpdotenv": "^5.3",
+        "erandir/plug-route": "^4.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
     }
 }
