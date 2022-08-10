@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace App\Infra\Cli\Commands;
 
 
-use App\Infra\Http\Controllers\Presentation;
+use App\Infra\Presentation\Presentation;
 use App\Application\UseCases\ExportRegistration\InputBoundary;
 use App\Application\UseCases\ExportRegistration\ExportRegistration;
 

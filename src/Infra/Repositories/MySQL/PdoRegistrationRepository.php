@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace App\Infra\Repositories\MySQL;
 
 
+use Exception;
 use DateTimeImmutable;
 use App\Domain\ValueObjects\Cpf;
 use App\Domain\ValueObjects\Email;
@@ -26,6 +27,7 @@ final class PdoRegistrationRepository implements LoadRegistrationRepository
 
     /**
      * @throws RegistrationNotFoundException
+     * @throws Exception
      */
     public function loadByRegistrationNumber(Cpf $cpf): Registration
     {

@@ -42,7 +42,7 @@ $pdo = new \PDO($dsn, $appConfig['database']['username'], $appConfig['database']
 
 $route = RouteFactory::create();
 
-$route->group(array('prefix' => '/api'), function (PlugRoute $route) use ($pdo) {
+$route->group(array('prefix' => '/api/v1'), function (PlugRoute $route) use ($pdo) {
 
     $route->post('/registration/register', function (Request $request, Response $response) use ($pdo) {
         $newRequest = PlugRoutePsrAdapter::adapterRequest($request);
